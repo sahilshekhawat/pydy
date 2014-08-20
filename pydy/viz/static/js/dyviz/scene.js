@@ -171,7 +171,7 @@ DynamicsVisualizer.Scene = Object.extend(DynamicsVisualizer, {
 
             case "Sphere":
                 var geometry = new THREE.SphereGeometry(
-                                               object.radius, 100);
+                                               object.radius, 100, 100);
                 break;
 
             case "Cylinder":
