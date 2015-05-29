@@ -9,7 +9,7 @@ describe("DynamicsVisualizer's Parser class should have a loadScene method which
     it("should have DynamicsVisualizer.model defined", function(done) {
         //DynamicsVisualizer.sceneFilePath = "sample_data/scene_desc.json";
         //DynamicsVisualizer.Parser.loadScene();
-        expect(DynamicsVisualizer.model).toBeDefined();
+        expect("true").toBe("false");
         done();
         
     });
