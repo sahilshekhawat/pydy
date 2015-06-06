@@ -15,3 +15,7 @@ __all__.extend(utils.__all__)
 import visualizer
 from .visualizer import *
 __all__.extend(visualizer.__all__)
+
+import bodyjoints
+from .bodyjoints import *
+__all__.extend(bodyjoints.__all__)

@@ -2,7 +2,10 @@ from __future__ import print_function, division
 
 __all__ = ['MultiBodySystem']
 
-from bodies import Ground
+from bodies import Ground, Body
+from utils import AssignName
+from sympy import Symbol
+from sympy.physics.mechanics import KanesMethod
 
 
 class MultiBodySystem(object):
@@ -14,52 +17,60 @@ class MultiBodySystem(object):
         >>> system = MultiBodySystem()
 
     Its function is to provide a common place for all the components to
-    interact.
+    interact and when the system has been defined by the user, to
+    generate EoMs.
     """
     def __init__(self):
-        self.q_ind = []
-        self.u_ind = []
-        self.kd = []
-        self.force_list = []
-        self.body_list = []
-        self.ground = Ground()
+        self._q_ind = []
+        self._qd_ind = []
+        self._u_ind = []
+        self._kd = []
+        self._force_list = []
+        self._body_list = []
+        self._sympy_bodies = []
+        self.ground = Ground(self)
+        self.assignName = AssignName()
+        self.reference_frame = self.ground.reference_frame
+        self.origin = self.ground.origin
+        self.gravity = None
+        self.gravitational_constant = None
+        self.kanes = None
 
-    @property
-    def q_ind(self):
-        return self.q_ind
+    def generate_body_tree(self):
+        """
+        Generates body list based on the parent-child relationship between bodies.
+        """
+        if self.ground:
+            self._body_list.append(self.ground)
+        next_child = self.ground.child
+        while next_child:
+            self._body_list.append(next_child.body)
+            next_child = next_child.child
 
-    @q_ind.setter
-    def q_ind(self, q):
-        self.q_ind.append(q)
+    def set_gravity(self, direction):
+        """Sets gravity system wide.
 
-    @property
-    def u_ind(self):
-        return self.u_ind
+        Attributes
+        ==========
+        direction: Vector
+            sets the direction of the gravity
+        """
+        self.gravitational_constant = Symbol('g')
+        self.gravity = self.gravitational_constant * direction
 
-    @u_ind.setter
-    def u_ind(self, u):
-        self.u_ind.append(u)
+    def add_gravity_force(self, direction):
+        """iterates over all bodies and adds gravity force for all of them
+        to the force list
+        """
+        self.set_gravity(direction)
+        for i in self._body_list:
+            self._force_list.append((i.center_of_mass, i.mass * self.gravity))
 
-    @property
-    def kd(self):
-        return self.kd
-
-    @kd.setter
-    def kd(self, equation):
-        self.kd.append(equation)
-
-    @property
-    def force_list(self):
-        return self.force_list
-
-    @force_list.setter
-    def force_list(self, force):
-        self.force_list.append(force)
-
-    @property
-    def body_list(self):
-        return self.body_list
-
-    @body_list.setter
-    def body_list(self, body):
-        self.body_list.append(body)
+    def get_eoms(self):
+        for i in range(len(self._qd_ind)):
+            self._kd.append(self._qd_ind[i] - self._u_ind[i])
+        for i in self._body_list:
+            self._sympy_bodies.append(i.body)
+        self.kanes = KanesMethod(self.reference_frame, q_ind=self._q_ind,
+                            u_ind=self._u_ind, kd_eqs=self._kd)
+        self.kanes.kanes_equations(self._force_list, self._sympy_bodies)
